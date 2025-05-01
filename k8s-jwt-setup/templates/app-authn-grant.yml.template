@@ -1,0 +1,5 @@
+# Applied at /conjur/authn-jwt
+# Grants group role for authentication to workload group /data/{{ AUTHN_JWT_ID }} 
+- !grant
+    role: !group {{ AUTHN_JWT_ID }}/apps
+    member: !group /data/{{ AUTHN_JWT_ID }}

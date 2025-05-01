@@ -1,0 +1,18 @@
+# Applied at /data
+# Defines workloads that authenticate to /conjur/authn-jwt/{{ AUTHN_JWT_ID }}
+
+- !policy
+  id: {{ AUTHN_JWT_ID }}
+  body:
+    - !group
+
+    - &hosts
+        - !host
+            id: {{ WORKLOAD_ID }}
+            annotations:
+                authn-jwt/{{ AUTHN_JWT_ID }}/{{ TOKEN_APP_PROPERTY }}: {{ WORKLOAD_ID }}
+
+    - !grant 
+        role: !group
+        members: *hosts
+

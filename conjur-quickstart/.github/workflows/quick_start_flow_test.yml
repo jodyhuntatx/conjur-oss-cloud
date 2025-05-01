@@ -1,0 +1,30 @@
+name: quick_start_flow_test
+on:
+  # Run once daily at 12 AM UTC, 8 PM EST
+  schedule:
+    - cron: '0 0 * * *'
+
+  # Run this on pushes to main
+  push:
+    branches:
+    - main
+
+  # Or when PR operations are done
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+jobs:
+  # runs through all the tasks listed in conjur-quickstart daily
+  # ensures that the quickstart flow is not broken for end users
+
+  setup-conjur-env:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run Worlflow Test Script
+        run: ./test_workflow.sh

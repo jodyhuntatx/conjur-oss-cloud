@@ -1,0 +1,87 @@
+services:
+  openssl:
+    image: cyberark/conjur
+    container_name: openssl
+    entrypoint:
+     - openssl
+     - req
+     - -newkey
+     - rsa:2048
+     - -days
+     - "365"
+     - -nodes
+     - -x509
+     - -config
+     - /tmp/conf/tls.conf
+     - -extensions
+     - v3_ca
+     - -keyout
+     - /tmp/conf/nginx.key
+     - -out
+     - /tmp/conf/nginx.crt
+    volumes:
+     - ./conf/tls/:/tmp/conf
+
+  bot_app:
+    image: cfmanteiga/alpine-bash-curl-jq
+    privileged: true
+    container_name: bot_app
+    command: tail -F anything
+    volumes:
+    - ./program.sh:/tmp/program.sh
+    restart: on-failure
+
+  database:
+    image: postgres:15
+    container_name: postgres_database
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: password
+      POSTGRES_PASSWORD: SuperSecretPg
+    ports:
+      - 8432:5432
+
+  pgadmin:
+#    https://www.pgadmin.org/docs/pgadmin4/latest/container_deployment.html
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@domain.com
+      PGADMIN_DEFAULT_PASSWORD: SuperSecret
+    ports:
+      - 8081:80
+
+  conjur:
+    image: cyberark/conjur
+    container_name: conjur_server
+    command: server
+    environment:
+      DATABASE_URL: postgres://postgres:SuperSecretPg@database/postgres
+      CONJUR_DATA_KEY:
+      CONJUR_AUTHENTICATORS:
+      CONJUR_TELEMETRY_ENABLED: 'false'
+    depends_on:
+    - database
+    restart: on-failure
+    ports:
+      - 8080:80
+
+  proxy:
+    image: nginx:latest
+    container_name: nginx_proxy
+    ports:
+      - "8443:443"
+    volumes:
+      - ./conf/:/etc/nginx/conf.d/:ro
+      - ./conf/tls/:/etc/nginx/tls/:ro
+    depends_on:
+    - conjur
+    - openssl
+    restart: on-failure
+
+  client:
+    image: cyberark/conjur-cli:8
+    container_name: conjur_client
+    depends_on: [ proxy ]
+    entrypoint: sleep
+    command: infinity
+    volumes:
+    - ./conf/policy:/policy

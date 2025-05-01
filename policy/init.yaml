@@ -1,0 +1,43 @@
+---
+# This policy file setups policy hierarchy to match that in Conjur Cloud
+
+# Conjur Cloud authenticator base policies
+- !policy
+  id: conjur
+  body:
+  - !policy
+    id: authn-iam
+  - !policy
+    id: authn-jwt
+  - !policy
+    id: authn-azure
+  - !policy
+    id: authn-k8s
+
+# Conjur Cloud vault synchronizer branch
+- !policy
+  id: data
+  body:
+  - !policy
+    id: vault
+
+# Simulated synced TestSafe account
+- !policy
+  id: data/vault/TestSafe/delegation
+  body:
+  - !group consumers
+
+- !policy
+  id: data/vault/TestSafe/MySQL-DB
+  body:
+  - &test-vars
+    - !variable username
+    - !variable password
+    - !variable address
+    - !variable Database
+    - !variable Port
+
+  - !permit
+    resource: *test-vars
+    privileges: [ read, execute ]
+    roles: !group /data/vault/TestSafe/delegation/consumers

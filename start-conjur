@@ -1,0 +1,134 @@
+#!/bin/bash 
+
+source env/conjur-oss.sh
+
+# Modified implementation of startup instructions from:
+#   https://www.conjur.org/get-started/quick-start/oss-environment/
+
+export DOCKER_CLI_HINTS="false"
+
+main() {
+  0_check_prereqs
+  ./stop-conjur
+  1_setup_a_conjur_oss_environment
+  2_setup_admin
+  3_setup_base_policy
+  4_init_variables
+  5_create_machine_identity
+}
+
+################################
+function 0_check_prereqs() {
+  missing=false
+  jq_installed=$(which jq)
+  if [[ "$jq_installed" == "" ]]; then
+    echo "Required utility jq is not installed."
+    missing=true
+  fi
+  docker_installed=$(which docker)
+  if [[ "$docker_installed" == "" ]]; then
+    echo "Docker is required but not installed."
+    missing=true
+  fi
+  dcompose_installed=$(which docker-compose)
+  if [[ "$dcompose_installed" == "" ]]; then
+    echo "docker-compose is required but not installed."
+    missing=true
+  fi
+  if $missing; then
+    echo "Install missing pre-requisites and try again."
+    exit -1
+  fi
+}
+
+################################
+function 1_setup_a_conjur_oss_environment() {
+  echo
+  echo "### Setup a Conjur OSS environment ###"
+  pushd conjur-quickstart > /dev/null 2>&1
+    step1
+    step23
+    step4
+    step5
+    step6
+  popd > /dev/null 2>&1
+  echo "Conjur OSS environment setup completed."
+  echo "#######################################"
+}
+
+function step1() {
+  echo
+  echo "Step 1: Pull the Docker images:"
+  docker-compose pull
+}
+
+function step23() {
+  echo
+  echo "Steps 2 & 3: Generate master key & Load master key as environment variable..."
+  docker-compose run --no-deps --rm conjur data-key generate > data_key
+  export CONJUR_DATA_KEY="$(< data_key)"
+}
+
+function step4() {
+  echo
+  echo "Step 4: Start the Conjur OSS environment..."
+  docker-compose up -d
+  docker-compose ps -a
+  sleep 5	# give server time to finish initialization
+}
+
+function step5() {
+  echo
+  echo "Step 5: Create admin account..."
+  docker-compose exec conjur conjurctl account create $CONJUR_ACCOUNT > admin_data
+}
+
+function step6() {
+  echo
+  echo "Step 6: Connect the Conjur client to the Conjur server..."
+  docker-compose exec client conjur init -u https://proxy -a $CONJUR_ACCOUNT --self-signed
+}
+
+################################
+function 2_setup_admin() {
+  echo
+  echo "### Setup admin user ###"
+  pushd conjur-quickstart > /dev/null 2>&1
+    echo
+    echo "Step 1: Log in to Conjur as admin..."
+    ADMIN_API_KEY=$(cat admin_data | grep "API key" | cut -d : -f 2 | tr -d ' \r\n')
+    docker-compose exec client conjur login -i admin -p $ADMIN_API_KEY
+    docker-compose exec client conjur user change-password -p  $CONJUR_ADMIN_PASSWORD
+  popd > /dev/null 2>&1
+}
+
+################################
+function 3_setup_base_policy() {
+  echo
+  echo "### Setup base policy ###"
+  ./coss-cli.sh append root policy/init.yaml
+  ./coss-cli.sh list
+}
+
+################################
+function 4_init_variables() {
+  echo
+  echo "### Initialize variables ###"
+  ./coss-cli.sh set data/vault/TestSafe/MySQL-DB/username test_user1
+  ./coss-cli.sh set data/vault/TestSafe/MySQL-DB/password UHGMLk1
+  ./coss-cli.sh set data/vault/TestSafe/MySQL-DB/address mysql-db.mysql.svc.cluster.local
+  ./coss-cli.sh set data/vault/TestSafe/MySQL-DB/Database petclinic
+  ./coss-cli.sh set data/vault/TestSafe/MySQL-DB/Port 3306
+}
+
+################################
+function 5_create_machine_identity() {
+  echo
+  echo "### Create machine identity ###"
+  ./coss-cli.sh append /data policy/testhost.yaml > testhost.json
+  echo "Test host identity info in ./testhost.json:"
+  cat ./testhost.json | jq .
+  ./coss-cli.sh append /data policy/testhost-access-grant.yaml
+}
+
+main "$@"
