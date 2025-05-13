@@ -1,5 +1,3 @@
 ---
 # Identity with basic API key authentication
-- !grant
-  role: !group vault/TestSafe/delegation/consumers
-  
+- !host dbAgent1

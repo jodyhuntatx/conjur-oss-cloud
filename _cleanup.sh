@@ -7,8 +7,9 @@ cyberark/conjur
 nginx:1.13.6-alpine
 cyberark/conjur-cli:5"
 
-./stop
+rm data_key testhost.json
+
+./stop-conjur
 for img in $IMAGES; do
  docker rmi $img
 done
-rm -rf conjur-quickstart

@@ -2,7 +2,7 @@
 if [[ ! -d conjur-quickstart ]]; then
   exit
 fi
-echo "This will destroy a running Conjur OSS installation and reinstall."
+echo "This will destroy a running Conjur OSS installation."
 read -n 1 -s -r -p "Press any key to continue or ctrl-C to exit."
 pushd conjur-quickstart > /dev/null
   docker-compose down -v

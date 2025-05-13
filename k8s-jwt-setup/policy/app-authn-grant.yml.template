@@ -1,5 +1,0 @@
-# Applied at /conjur/authn-jwt
-# Grants group role for authentication to workload group /data/agentic 
-- !grant
-    role: !group agentic/apps
-    member: !group /data/agentic
