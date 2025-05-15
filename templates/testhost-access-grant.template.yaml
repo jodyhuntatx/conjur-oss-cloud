@@ -1,0 +1,5 @@
+---
+# Role grant to give identiy read-only access to secrets
+- !grant
+  role: !group vault/{{SAFE}}/delegation/consumers
+  member: !host {{IDENTITY}}

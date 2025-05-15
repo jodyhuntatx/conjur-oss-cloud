@@ -1,5 +1,0 @@
----
-# Role grant to give identiy read-only access to secrets
-- !grant
-  role: !group vault/TestSafe/delegation/consumers
-  member: !host dbAgent1

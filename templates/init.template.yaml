@@ -23,21 +23,21 @@
 
 # Simulated synced TestSafe account
 - !policy
-  id: data/vault/TestSafe/delegation
+  id: data/vault/{{SAFE}}
   body:
-  - !group consumers
+  - !policy
+    id: delegation
+    body:
+    - !group consumers
 
 - !policy
-  id: data/vault/TestSafe/MySQL-DB
+  id: data/vault/{{SAFE}}/{{ACCOUNT}}
   body:
   - &test-vars
     - !variable username
     - !variable password
-    - !variable address
-    - !variable Database
-    - !variable Port
 
   - !permit
     resource: *test-vars
     privileges: [ read, execute ]
-    roles: !group /data/vault/TestSafe/delegation/consumers
+    roles: !group /data/vault/{{SAFE}}/delegation/consumers

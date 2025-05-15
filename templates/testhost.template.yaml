@@ -1,3 +1,3 @@
 ---
 # Identity with basic API key authentication
-- !host dbAgent1
+- !host {{IDENTITY}}

@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-source env/conjur-oss.sh
+source env.sh
 
 # Modified implementation of startup instructions from:
 #   https://www.conjur.org/get-started/quick-start/oss-environment/
@@ -86,7 +86,7 @@ function step5() {
 function step6() {
   echo
   echo "Step 6: Connect the Conjur client to the Conjur server..."
-  docker-compose exec client conjur init -u https://proxy -a $CONJUR_ACCOUNT --self-signed
+  docker-compose exec -i client conjur init -u https://proxy -a $CONJUR_ACCOUNT --self-signed
 }
 
 ################################
@@ -106,6 +106,10 @@ function 2_setup_admin() {
 function 3_setup_base_policy() {
   echo
   echo "### Setup base policy ###"
+  cat templates/init.template.yaml		\
+	| sed -e "s#{{SAFE}}#$SAFE#g"		\
+	| sed -e "s#{{ACCOUNT}}#$ACCOUNT#g"	\
+  	> policy/init.yaml
   ./coss-cli.sh append root policy/init.yaml
   ./coss-cli.sh list
 }
@@ -114,20 +118,25 @@ function 3_setup_base_policy() {
 function 4_init_variables() {
   echo
   echo "### Initialize variables ###"
-  ./coss-cli.sh set data/vault/TestSafe/MySQL-DB/username test_user1
-  ./coss-cli.sh set data/vault/TestSafe/MySQL-DB/password UHGMLk1
-  ./coss-cli.sh set data/vault/TestSafe/MySQL-DB/address mysql-db.mysql.svc.cluster.local
-  ./coss-cli.sh set data/vault/TestSafe/MySQL-DB/Database petclinic
-  ./coss-cli.sh set data/vault/TestSafe/MySQL-DB/Port 3306
+  ./coss-cli.sh set data/vault/$SAFE/$ACCOUNT/username test_user1
+  ./coss-cli.sh set data/vault/$SAFE/$ACCOUNT/password UHGMLk1
 }
 
 ################################
 function 5_create_machine_identity() {
   echo
   echo "### Create machine identity ###"
+  cat templates/testhost.template.yaml		\
+	| sed -e "s#{{IDENTITY}}#$IDENTITY#g"	\
+  	> policy/testhost.yaml
   ./coss-cli.sh append /data policy/testhost.yaml > testhost.json
   echo "Test host identity info in ./testhost.json:"
   cat ./testhost.json | jq .
+  cat templates/testhost-access-grant.template.yaml	\
+	| sed -e "s#{{SAFE}}#$SAFE#g"		\
+	| sed -e "s#{{ACCOUNT}}#$ACCOUNT#g"	\
+	| sed -e "s#{{IDENTITY}}#$IDENTITY#g"		\
+  	> policy/testhost-access-grant.yaml
   ./coss-cli.sh append /data policy/testhost-access-grant.yaml
 }
 
