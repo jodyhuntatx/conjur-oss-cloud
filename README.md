@@ -17,7 +17,7 @@ the Conjur instance with:
    - /data/vault branch for simulated vault synchronizer artifacts
    - /data/vault/TestSafe/delegation/consumers group
    - /data/vault/TestSafe/MySQL-DB/* variables
-   - /data/dbAgent1 host identity with API key authentication
+   - /data/dbApp1 host identity with API key authentication
 
 All initialization policies are in the policy/ directory. You can use these
 as templates to define your own artifacts as needed.
@@ -27,7 +27,3 @@ The start-conjur script uses it for all initialization steps except admin
 user setup. There is a conjur_client container that has the full Conjur CLI
 installed. If coss-cli.sh doesn't get the job done, you can exec into that
 container and run admin commands there.
-
-The k8s-jwt-setup directory has scripts to initialize an authn-jwt endpoint and
-creates a k8s host identity. It can be used as an example of how to setup JWT
-authentication.
