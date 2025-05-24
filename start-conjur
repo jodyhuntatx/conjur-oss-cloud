@@ -106,6 +106,7 @@ function 2_setup_admin() {
 function 3_setup_base_policy() {
   echo
   echo "### Setup base policy ###"
+  mkdir -p policy
   cat templates/init.template.yaml		\
 	| sed -e "s#{{SAFE}}#$SAFE#g"		\
 	| sed -e "s#{{ACCOUNT}}#$ACCOUNT#g"	\
